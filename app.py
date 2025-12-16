@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # --------------------------------------------------
-# Page Configuration
+# Page Config
 # --------------------------------------------------
 st.set_page_config(
     page_title="Financial Text Analyzer",
@@ -12,12 +12,18 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# Header Section
+# Paths
+# --------------------------------------------------
+CSV_PATH = "output/csv/rich_dad_analysis_output.csv"
+CHART_PATH = "output/charts"
+
+# --------------------------------------------------
+# Header
 # --------------------------------------------------
 st.markdown(
     """
-    <h1 style='text-align: center;'>📘 Financial Text Analyzer</h1>
-    <p style='text-align: center; color: gray;'>
+    <h1 style="text-align:center;">📘 Financial Text Analyzer</h1>
+    <p style="text-align:center; color:gray;">
     Chapter-wise Financial Insight Analysis<br>
     <b>Book:</b> Rich Dad Poor Dad – Robert Kiyosaki
     </p>
@@ -29,107 +35,114 @@ st.markdown(
 # --------------------------------------------------
 # Load Data
 # --------------------------------------------------
-csv_path = "output/csv/rich_dad_analysis_output.csv"
-
-if not os.path.exists(csv_path):
-    st.error("❌ CSV file not found. Please run the backend script first.")
+if not os.path.exists(CSV_PATH):
+    st.error("CSV file not found. Please run backend analysis first.")
     st.stop()
 
-df = pd.read_csv(csv_path)
+df = pd.read_csv(CSV_PATH)
 
 # --------------------------------------------------
-# Sidebar (Filters)
+# Sidebar Filters
 # --------------------------------------------------
-st.sidebar.markdown("## 🔍 Filters")
+st.sidebar.header("🔍 Filters")
 
-selected_categories = st.sidebar.multiselect(
-    "Financial Categories",
+category_filter = st.sidebar.multiselect(
+    "Select Financial Categories",
     options=sorted(df["Category"].unique()),
     default=sorted(df["Category"].unique())
 )
 
-selected_chapters = st.sidebar.multiselect(
-    "Chapters",
+chapter_filter = st.sidebar.multiselect(
+    "Select Chapters",
     options=sorted(df["Chapter"].unique()),
     default=sorted(df["Chapter"].unique())
 )
 
 filtered_df = df[
-    (df["Category"].isin(selected_categories)) &
-    (df["Chapter"].isin(selected_chapters))
+    (df["Category"].isin(category_filter)) &
+    (df["Chapter"].isin(chapter_filter))
 ]
 
 # --------------------------------------------------
-# Dashboard Metrics
+# KPI Metrics
 # --------------------------------------------------
-st.markdown("## 📌 Overview")
+st.subheader("📌 Overview")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric(
-    label="📄 Total Sentences",
-    value=len(filtered_df)
-)
+col1.metric("📄 Total Sentences", len(filtered_df))
+col2.metric("📊 Total Financial Score", int(filtered_df["Score"].sum()))
+col3.metric("📚 Chapters Covered", filtered_df["Chapter"].nunique())
 
-col2.metric(
-    label="📊 Total Financial Score",
-    value=int(filtered_df["Score"].sum())
-)
-
-col3.metric(
-    label="📚 Chapters Covered",
-    value=filtered_df["Chapter"].nunique()
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("---")
 
 # --------------------------------------------------
-# Charts Section
+# Tabs Layout
 # --------------------------------------------------
-st.markdown("## 📊 Financial Insights")
+tab1, tab2, tab3 = st.tabs(
+    ["📊 Charts Dashboard", "📄 Extracted Sentences", "⬇ Download"]
+)
 
-chart_col1, chart_col2 = st.columns(2)
+# --------------------------------------------------
+# TAB 1: Charts
+# --------------------------------------------------
+with tab1:
+    st.subheader("📊 Financial Insights Dashboard")
 
-with chart_col1:
-    st.markdown("### Category-wise Financial Score")
-    category_scores = (
-        filtered_df.groupby("Category")["Score"]
-        .sum()
-        .sort_values()
+    c1, c2 = st.columns(2)
+    c3, c4 = st.columns(2)
+
+    with c1:
+        st.markdown("### Category-wise Score (Bar Chart)")
+        st.image(os.path.join(CHART_PATH, "category_scores_bar.png"), use_container_width=True)
+
+    with c2:
+        st.markdown("### Financial Theme Distribution (Pie Chart)")
+        st.image(os.path.join(CHART_PATH, "category_distribution_pie.png"), use_container_width=True)
+
+    with c3:
+        st.markdown("### Chapter-wise Financial Trend (Line Chart)")
+        st.image(os.path.join(CHART_PATH, "chapter_trend_line.png"), use_container_width=True)
+
+    with c4:
+        st.markdown("### Financial Keyword Frequency")
+        st.image(os.path.join(CHART_PATH, "financial_keyword_frequency.png"), use_container_width=True)
+
+# --------------------------------------------------
+# TAB 2: Data Table
+# --------------------------------------------------
+with tab2:
+    st.subheader("📄 Extracted Financial & Motivational Sentences")
+    st.caption("Filtered by selected categories and chapters")
+
+    st.dataframe(
+        filtered_df,
+        use_container_width=True,
+        height=450
     )
-    st.bar_chart(category_scores)
 
-with chart_col2:
-    st.markdown("### Chapter-wise Financial Trend")
-    chapter_scores = (
-        filtered_df.groupby("Chapter")["Score"]
-        .sum()
-        .sort_index()
+# --------------------------------------------------
+# TAB 3: Download
+# --------------------------------------------------
+with tab3:
+    st.subheader("⬇ Download Analysis Data")
+
+    st.download_button(
+        label="Download Filtered CSV",
+        data=filtered_df.to_csv(index=False),
+        file_name="financial_text_analysis_filtered.csv",
+        mime="text/csv"
     )
-    st.line_chart(chapter_scores)
-
-st.markdown("<hr>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# Data Table Section
+# Footer
 # --------------------------------------------------
-st.markdown("## 📄 Extracted Financial Sentences")
-st.caption("Filtered results based on selected categories and chapters")
-
-st.dataframe(
-    filtered_df,
-    use_container_width=True,
-    height=400
-)
-
-# --------------------------------------------------
-# Download Section
-# --------------------------------------------------
-st.markdown("<br>", unsafe_allow_html=True)
-
-st.download_button(
-    label="⬇ Download Filtered Data (CSV)",
-    data=filtered_df.to_csv(index=False),
-    file_name="financial_text_analysis.csv",
-    mime="text/csv"
+st.markdown(
+    """
+    <hr>
+    <p style="text-align:center; color:gray;">
+    Developed by Sandhya Wani | Financial Text Analyzer Project
+    </p>
+    """,
+    unsafe_allow_html=True
 )

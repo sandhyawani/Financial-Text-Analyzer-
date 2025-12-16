@@ -59,7 +59,7 @@ def clean_line(text):
 
 #Skips content like ISBN or copyright text.
 def is_noise(text):
-    return any(w in text.lower() for w in ["copyright", "isbn", "publisher"])
+    return any(w in text.lower() for w in ["copyright", "isbn", "publisher", "cashflow"])
 
 #Converts text to lowercase and removes extra spaces
 def normalize(text):

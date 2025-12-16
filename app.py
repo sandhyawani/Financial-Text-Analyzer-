@@ -2,58 +2,57 @@ import streamlit as st
 import pandas as pd
 import os
 
-# --------------------------------------------------
-# Page Config
-# --------------------------------------------------
+# Page configuration
 st.set_page_config(
     page_title="Financial Text Analyzer",
-    page_icon="📊",
     layout="wide"
 )
 
-# --------------------------------------------------
-# Paths
-# --------------------------------------------------
-CSV_PATH = "output/csv/rich_dad_analysis_output.csv"
-CHART_PATH = "output/charts"
+# Define base directory and file paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "output", "csv", "rich_dad_analysis_output.csv")
+CHART_PATH = os.path.join(BASE_DIR, "output", "charts")
 
-# --------------------------------------------------
-# Header
-# --------------------------------------------------
+# Function to safely display chart images
+def show_image(filename, title):
+    path = os.path.join(CHART_PATH, filename)
+    st.markdown(f"### {title}")
+    if os.path.exists(path):
+        st.image(path, use_container_width=True)
+    else:
+        st.warning(f"Chart not found: {filename}")
+
+# Application header
 st.markdown(
     """
-    <h1 style="text-align:center;">📘 Financial Text Analyzer</h1>
+    <h1 style="text-align:center;">Financial Text Analyzer</h1>
     <p style="text-align:center; color:gray;">
-    Chapter-wise Financial Insight Analysis<br>
-    <b>Book:</b> Rich Dad Poor Dad – Robert Kiyosaki
+        Chapter-wise Financial Insight Analysis<br>
+        <b>Book:</b> Rich Dad Poor Dad – Robert Kiyosaki
     </p>
     <hr>
     """,
     unsafe_allow_html=True
 )
 
-# --------------------------------------------------
-# Load Data
-# --------------------------------------------------
+# Load CSV data
 if not os.path.exists(CSV_PATH):
-    st.error("CSV file not found. Please run backend analysis first.")
+    st.error("CSV file not found. Please run the backend analysis first.")
     st.stop()
 
 df = pd.read_csv(CSV_PATH)
 
-# --------------------------------------------------
-# Sidebar Filters
-# --------------------------------------------------
-st.sidebar.header("🔍 Filters")
+# Sidebar filters
+st.sidebar.header("Filters")
 
 category_filter = st.sidebar.multiselect(
-    "Select Financial Categories",
+    "Select financial categories",
     options=sorted(df["Category"].unique()),
     default=sorted(df["Category"].unique())
 )
 
 chapter_filter = st.sidebar.multiselect(
-    "Select Chapters",
+    "Select chapters",
     options=sorted(df["Chapter"].unique()),
     default=sorted(df["Chapter"].unique())
 )
@@ -63,56 +62,43 @@ filtered_df = df[
     (df["Chapter"].isin(chapter_filter))
 ]
 
-# --------------------------------------------------
-# KPI Metrics
-# --------------------------------------------------
-st.subheader("📌 Overview")
+# Overview metrics
+st.subheader("Overview")
 
 col1, col2, col3 = st.columns(3)
-
-col1.metric("📄 Total Sentences", len(filtered_df))
-col2.metric("📊 Total Financial Score", int(filtered_df["Score"].sum()))
-col3.metric("📚 Chapters Covered", filtered_df["Chapter"].nunique())
+col1.metric("Total sentences", len(filtered_df))
+col2.metric("Total financial score", int(filtered_df["Score"].sum()))
+col3.metric("Chapters covered", filtered_df["Chapter"].nunique())
 
 st.markdown("---")
 
-# --------------------------------------------------
-# Tabs Layout
-# --------------------------------------------------
+# Tabs for charts, table, and download
 tab1, tab2, tab3 = st.tabs(
-    ["📊 Charts Dashboard", "📄 Extracted Sentences", "⬇ Download"]
+    ["Charts Dashboard", "Extracted Sentences", "Download"]
 )
 
-# --------------------------------------------------
-# TAB 1: Charts
-# --------------------------------------------------
+# Charts dashboard
 with tab1:
-    st.subheader("📊 Financial Insights Dashboard")
+    st.subheader("Financial Insights Dashboard")
 
     c1, c2 = st.columns(2)
     c3, c4 = st.columns(2)
 
     with c1:
-        st.markdown("### Category-wise Score (Bar Chart)")
-        st.image(os.path.join(CHART_PATH, "category_scores_bar.png"), use_container_width=True)
+        show_image("category_score_bar.png", "Category-wise Financial Score")
 
     with c2:
-        st.markdown("### Financial Theme Distribution (Pie Chart)")
-        st.image(os.path.join(CHART_PATH, "category_distribution_pie.png"), use_container_width=True)
+        show_image("category_distribution_pie.png", "Financial Theme Distribution")
 
     with c3:
-        st.markdown("### Chapter-wise Financial Trend (Line Chart)")
-        st.image(os.path.join(CHART_PATH, "chapter_trend_line.png"), use_container_width=True)
+        show_image("chapter_trend_line.png", "Chapter-wise Financial Trend")
 
     with c4:
-        st.markdown("### Financial Keyword Frequency")
-        st.image(os.path.join(CHART_PATH, "financial_keyword_frequency.png"), use_container_width=True)
+        show_image("financial_keyword_frequency.png", "Financial Keyword Frequency")
 
-# --------------------------------------------------
-# TAB 2: Data Table
-# --------------------------------------------------
+# Display extracted sentences
 with tab2:
-    st.subheader("📄 Extracted Financial & Motivational Sentences")
+    st.subheader("Extracted Financial and Motivational Sentences")
     st.caption("Filtered by selected categories and chapters")
 
     st.dataframe(
@@ -121,28 +107,15 @@ with tab2:
         height=450
     )
 
-# --------------------------------------------------
-# TAB 3: Download
-# --------------------------------------------------
+# Download filtered data
 with tab3:
-    st.subheader("⬇ Download Analysis Data")
+    st.subheader("Download Analysis Data")
 
     st.download_button(
-        label="Download Filtered CSV",
+        label="Download filtered CSV",
         data=filtered_df.to_csv(index=False),
         file_name="financial_text_analysis_filtered.csv",
         mime="text/csv"
     )
 
-# --------------------------------------------------
-# Footer
-# --------------------------------------------------
-st.markdown(
-    """
-    <hr>
-    <p style="text-align:center; color:gray;">
-    Developed by Sandhya Wani | Financial Text Analyzer Project
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+
